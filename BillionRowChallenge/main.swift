@@ -1,5 +1,9 @@
 import Foundation
 
+@globalActor actor ProcessorActor: GlobalActor {
+    static let shared = ProcessorActor()
+}
+
 class Processor {
     let measurementFilePath = FileManager.default.currentDirectoryPath + "/measurements.txt"
     let outputFilePath = FileManager.default.currentDirectoryPath + "/output.txt"
@@ -33,12 +37,17 @@ class Processor {
         }
     }
 
+    let start = Date()
     let fileHandle: FileHandle
     let bufferLength: Int
     var buffer: Data
     let delimiter = "\n".data(using: .utf8)!
 
-    var tallies: [String: Tally] = [:]
+    var totalElapsed: Double {
+        -start.timeIntervalSinceNow
+    }
+
+    @ProcessorActor var tallies: [String: Tally] = [:]
 
     init?(bufferLength: Int = 4096) {
         let inputFilePath = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : measurementFilePath
@@ -60,23 +69,7 @@ class Processor {
         fileHandle.closeFile()
     }
 
-    func nextLine() -> String? {
-        while true {
-            if let range = buffer.range(of: delimiter) {
-                let lineData = buffer.subdata(in: 0..<range.lowerBound)
-                buffer.removeSubrange(0..<range.upperBound)
-                return String(data: lineData, encoding: .utf8)
-            }
-
-            let tempData = fileHandle.readData(ofLength: bufferLength)
-            if tempData.isEmpty {
-                return nil
-            }
-            buffer.append(tempData)
-        }
-    }
-
-    func add(id: String, temperature: Double) async {
+    @ProcessorActor func add(id: String, temperature: Double) async {
         if let tally = tallies[id] {
             await tally.add(temperature: temperature)
         } else {
@@ -84,27 +77,89 @@ class Processor {
         }
     }
 
-    func process() async {
-        let start = Date()
+    @discardableResult
+    func loadBuffer() -> Bool {
+        let tempData = fileHandle.readData(ofLength: bufferLength)
+        if !tempData.isEmpty {
+            buffer.append(tempData)
+            return true
+        } else {
+            return false
+        }
+    }
 
-        while let line = nextLine() {
-            let parts = line.components(separatedBy: ";")
-            assert(parts.count == 2)
-            let id = parts[0]
-            if let temperature = Double(parts[1]) {
-                await add(id: id, temperature: temperature)
+    func nextLines() -> [String]? {
+        let batchSize = 1 //ProcessInfo.processInfo.activeProcessorCount
+        var batch = [String]()
+        for _ in 0..<batchSize {
+            if let range = buffer.range(of: delimiter) {
+                let lineData = buffer.subdata(in: 0..<range.lowerBound)
+                buffer.removeSubrange(0..<range.upperBound)
+                if let line = String(data: lineData, encoding: .utf8) {
+                    batch.append(line)
+                }
+            } else if !loadBuffer() {
+                break
             }
+        }
+        return !batch.isEmpty ? batch : nil
+    }
+
+    func nextLine() -> String? {
+        loadBuffer()
+        while true {
+            var batch = [String]()
+            if let range = buffer.range(of: delimiter) {
+                let lineData = buffer.subdata(in: 0..<range.lowerBound)
+                buffer.removeSubrange(0..<range.upperBound)
+                if let line = String(data: lineData, encoding: .utf8) {
+                    return line
+                } else {
+                    fatalError()
+                }
+            } else if !loadBuffer() {
+                return nil
+            }
+        }
+    }
+
+    nonisolated func process() async {
+        while let line = nextLine() {
+            await processLine(line: line)
         }
 
         await writeOutput()
 
-        let totalElapsed = -start.timeIntervalSinceNow
-        print("Processed with \(tallies.count) results in \(totalElapsed * 1000) ms")
+        print("Processed \(await tallies.count) results in \(totalElapsed * 1000) ms")
 
         exit(EXIT_SUCCESS)
     }
 
-    func writeOutput() async {
+    func processLine(line: String) async {
+        let parts = line.components(separatedBy: ";")
+        assert(parts.count == 2)
+        let id = parts[0]
+        if let temperature = Double(parts[1]) {
+            await self.add(id: id, temperature: temperature)
+        }
+    }
+
+    func processLines(lines: [String]) async {
+        await withTaskGroup(of: Void.self) { group in
+            for line in lines {
+                group.addTask {
+                    let parts = line.components(separatedBy: ";")
+                    assert(parts.count == 2)
+                    let id = parts[0]
+                    if let temperature = Double(parts[1]) {
+                        await self.add(id: id, temperature: temperature)
+                    }
+                }
+            }
+        }
+    }
+
+    @ProcessorActor func writeOutput() async {
         FileManager.default.createFile(atPath: outputFilePath, contents: nil, attributes: nil)
 
         if let fileHandle = FileHandle(forWritingAtPath: outputFilePath) {
