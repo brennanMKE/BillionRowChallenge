@@ -1,5 +1,50 @@
 import Foundation
 
+let groupingStrategy = GroupStrategy.groupedLinesWithTaskGroup
+let groupSize = GroupSize.custom(1)
+
+enum GroupStrategy {
+    case single
+    case groupedLinesWithTaskGroup
+    case groupedLinesWithoutTaskGroup
+
+    var useGroupedLines: Bool {
+        switch self {
+        case .single:
+            false
+        case .groupedLinesWithTaskGroup, .groupedLinesWithoutTaskGroup:
+            true
+        }
+    }
+
+    var useTaskGroup: Bool {
+        switch self {
+        case .single, .groupedLinesWithoutTaskGroup:
+            false
+        case .groupedLinesWithTaskGroup:
+            true
+        }
+    }
+}
+
+enum GroupSize {
+    case activeProcessorCount
+    case doubleActiveProcessorCount
+    case custom(Int)
+
+    var count: Int {
+        switch self {
+        case .activeProcessorCount:
+            ProcessInfo.processInfo.activeProcessorCount
+        case .doubleActiveProcessorCount:
+            ProcessInfo.processInfo.activeProcessorCount * 2
+        case .custom(let count):
+            count
+        }
+    }
+}
+
+
 @globalActor actor ProcessorActor: GlobalActor {
     static let shared = ProcessorActor()
 }
@@ -88,10 +133,29 @@ class Processor {
         }
     }
 
+    func nextLine() -> String? {
+        while true {
+            // attempts to read to newline
+            if let range = buffer.range(of: delimiter) {
+                let lineData = buffer.subdata(in: 0..<range.lowerBound)
+                buffer.removeSubrange(0..<range.upperBound)
+                if let line = String(data: lineData, encoding: .utf8) {
+                    return line
+                } else {
+                    fatalError()
+                }
+            }
+            // tries to load more data into buffer
+            if !loadBuffer() {
+                assert(buffer.isEmpty)
+                return nil
+            }
+        }
+    }
+
     func nextLines() -> [String]? {
-        let batchSize = 1 //ProcessInfo.processInfo.activeProcessorCount
-        var batch = [String]()
-        for _ in 0..<batchSize {
+        var batch: [String] = []
+        for _ in 0..<groupSize.count {
             if let range = buffer.range(of: delimiter) {
                 let lineData = buffer.subdata(in: 0..<range.lowerBound)
                 buffer.removeSubrange(0..<range.upperBound)
@@ -105,57 +169,52 @@ class Processor {
         return !batch.isEmpty ? batch : nil
     }
 
-    func nextLine() -> String? {
+    func process() async {
         loadBuffer()
-        while true {
-            var batch = [String]()
-            if let range = buffer.range(of: delimiter) {
-                let lineData = buffer.subdata(in: 0..<range.lowerBound)
-                buffer.removeSubrange(0..<range.upperBound)
-                if let line = String(data: lineData, encoding: .utf8) {
-                    return line
-                } else {
-                    fatalError()
-                }
-            } else if !loadBuffer() {
-                return nil
-            }
-        }
-    }
 
-    nonisolated func process() async {
-        while let line = nextLine() {
-            await processLine(line: line)
+        if groupingStrategy.useGroupedLines {
+            while let lines = nextLines() {
+                if groupingStrategy.useTaskGroup {
+                    await processLines(lines: lines)
+                } else {
+                    for line in lines {
+                        await processLine(line: line)
+                    }
+                }
+            }
+        } else {
+            while let line = nextLine() {
+                await processLine(line: line)
+            }
         }
 
         await writeOutput()
 
         print("Processed \(await tallies.count) results in \(totalElapsed * 1000) ms")
-
         exit(EXIT_SUCCESS)
     }
 
     func processLine(line: String) async {
         let parts = line.components(separatedBy: ";")
-        assert(parts.count == 2)
         let id = parts[0]
         if let temperature = Double(parts[1]) {
             await self.add(id: id, temperature: temperature)
         }
     }
 
-    func processLines(lines: [String]) async {
+    nonisolated func processLines(lines: [String]) async {
         await withTaskGroup(of: Void.self) { group in
             for line in lines {
                 group.addTask {
                     let parts = line.components(separatedBy: ";")
-                    assert(parts.count == 2)
                     let id = parts[0]
                     if let temperature = Double(parts[1]) {
                         await self.add(id: id, temperature: temperature)
                     }
                 }
             }
+
+            await group.waitForAll()
         }
     }
 
@@ -175,8 +234,6 @@ class Processor {
                     }
                 }
             }
-
-            print("Output:", outputFilePath)
         }
     }
 }
