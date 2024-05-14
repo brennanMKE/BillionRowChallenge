@@ -1,7 +1,7 @@
 import Foundation
 
-let groupingStrategy = GroupStrategy.groupedLinesWithTaskGroup
-let groupSize = GroupSize.custom(1)
+let groupingStrategy = GroupStrategy.single
+let groupSize = GroupSize.custom(2)
 
 enum GroupStrategy {
     case single
@@ -49,9 +49,10 @@ enum GroupSize {
     static let shared = ProcessorActor()
 }
 
+let measurementFilePath = FileManager.default.currentDirectoryPath + "/measurements.txt"
+let outputFilePath = FileManager.default.currentDirectoryPath + "/output.txt"
+
 class Processor {
-    let measurementFilePath = FileManager.default.currentDirectoryPath + "/measurements.txt"
-    let outputFilePath = FileManager.default.currentDirectoryPath + "/output.txt"
 
     actor Tally {
         var min: Double
@@ -94,9 +95,7 @@ class Processor {
 
     @ProcessorActor var tallies: [String: Tally] = [:]
 
-    init?(bufferLength: Int = 4096) {
-        let inputFilePath = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : measurementFilePath
-
+    init?(inputFilePath: String, bufferLength: Int = 4096) {
         guard FileManager.default.fileExists(atPath: inputFilePath) else {
             print("Measurements not found")
             exit(EXIT_FAILURE)
@@ -198,14 +197,14 @@ class Processor {
         let parts = line.components(separatedBy: ";")
         let id = parts[0]
         if let temperature = Double(parts[1]) {
-            await self.add(id: id, temperature: temperature)
+            await add(id: id, temperature: temperature)
         }
     }
 
     nonisolated func processLines(lines: [String]) async {
         await withTaskGroup(of: Void.self) { group in
             for line in lines {
-                group.addTask {
+                group.addTask { //@ProcessorActor in
                     let parts = line.components(separatedBy: ";")
                     let id = parts[0]
                     if let temperature = Double(parts[1]) {
@@ -239,7 +238,8 @@ class Processor {
 }
 
 Task {
-    await Processor()?.process()
+    let inputFilePath = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : measurementFilePath
+    await Processor(inputFilePath: inputFilePath)?.process()
 }
 
 dispatchMain()
