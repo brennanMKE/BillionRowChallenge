@@ -10,6 +10,7 @@
 		266027922BF1CAE2008698A3 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266027912BF1CAE2008698A3 /* main.swift */; };
 		266027A32BF1D248008698A3 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266027A22BF1D248008698A3 /* main.swift */; };
 		266027A72BF1D24F008698A3 /* AllStations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2660279A2BF1CCA8008698A3 /* AllStations.swift */; };
+		26E4F8392BF3BEB70021093F /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26E4F8382BF3BEB70021093F /* main.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -31,6 +32,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		26E4F8342BF3BEB70021093F /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +49,8 @@
 		2660279A2BF1CCA8008698A3 /* AllStations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllStations.swift; sourceTree = "<group>"; };
 		266027A02BF1D248008698A3 /* CreateMeasurements */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CreateMeasurements; sourceTree = BUILT_PRODUCTS_DIR; };
 		266027A22BF1D248008698A3 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		26E4F8362BF3BEB70021093F /* ChatGPT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ChatGPT; sourceTree = BUILT_PRODUCTS_DIR; };
+		26E4F8382BF3BEB70021093F /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +68,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		26E4F8332BF3BEB70021093F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -63,6 +82,7 @@
 			isa = PBXGroup;
 			children = (
 				266027902BF1CAE2008698A3 /* BillionRowChallenge */,
+				26E4F8372BF3BEB70021093F /* ChatGPT */,
 				266027A12BF1D248008698A3 /* CreateMeasurements */,
 				2660278F2BF1CAE2008698A3 /* Products */,
 			);
@@ -73,6 +93,7 @@
 			children = (
 				2660278E2BF1CAE2008698A3 /* BillionRowChallenge */,
 				266027A02BF1D248008698A3 /* CreateMeasurements */,
+				26E4F8362BF3BEB70021093F /* ChatGPT */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -92,6 +113,14 @@
 				2660279A2BF1CCA8008698A3 /* AllStations.swift */,
 			);
 			path = CreateMeasurements;
+			sourceTree = "<group>";
+		};
+		26E4F8372BF3BEB70021093F /* ChatGPT */ = {
+			isa = PBXGroup;
+			children = (
+				26E4F8382BF3BEB70021093F /* main.swift */,
+			);
+			path = ChatGPT;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -131,6 +160,23 @@
 			productReference = 266027A02BF1D248008698A3 /* CreateMeasurements */;
 			productType = "com.apple.product-type.tool";
 		};
+		26E4F8352BF3BEB70021093F /* ChatGPT */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 26E4F83C2BF3BEB70021093F /* Build configuration list for PBXNativeTarget "ChatGPT" */;
+			buildPhases = (
+				26E4F8322BF3BEB70021093F /* Sources */,
+				26E4F8332BF3BEB70021093F /* Frameworks */,
+				26E4F8342BF3BEB70021093F /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ChatGPT;
+			productName = ChatGPT;
+			productReference = 26E4F8362BF3BEB70021093F /* ChatGPT */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -138,14 +184,17 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1530;
-				LastUpgradeCheck = 1530;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					2660278D2BF1CAE2008698A3 = {
 						CreatedOnToolsVersion = 15.3;
 					};
 					2660279F2BF1D248008698A3 = {
 						CreatedOnToolsVersion = 15.3;
+					};
+					26E4F8352BF3BEB70021093F = {
+						CreatedOnToolsVersion = 16.0;
 					};
 				};
 			};
@@ -164,6 +213,7 @@
 			targets = (
 				2660278D2BF1CAE2008698A3 /* BillionRowChallenge */,
 				2660279F2BF1D248008698A3 /* CreateMeasurements */,
+				26E4F8352BF3BEB70021093F /* ChatGPT */,
 			);
 		};
 /* End PBXProject section */
@@ -183,6 +233,14 @@
 			files = (
 				266027A72BF1D24F008698A3 /* AllStations.swift in Sources */,
 				266027A32BF1D248008698A3 /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		26E4F8322BF3BEB70021093F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				26E4F8392BF3BEB70021093F /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -223,6 +281,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -286,6 +345,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -311,6 +371,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -320,6 +381,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -329,6 +391,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -338,6 +401,29 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		26E4F83A2BF3BEB70021093F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		26E4F83B2BF3BEB70021093F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -369,6 +455,15 @@
 			buildConfigurations = (
 				266027A52BF1D248008698A3 /* Debug */,
 				266027A62BF1D248008698A3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		26E4F83C2BF3BEB70021093F /* Build configuration list for PBXNativeTarget "ChatGPT" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				26E4F83A2BF3BEB70021093F /* Debug */,
+				26E4F83B2BF3BEB70021093F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
