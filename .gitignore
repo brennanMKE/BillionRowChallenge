@@ -1,5 +1,4 @@
 .DS_Store
 xcuserdata
 build
-measurements.txt
-output.txt
+*.txt
