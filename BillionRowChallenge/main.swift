@@ -1,8 +1,8 @@
 import Foundation
 
 class Processor {
-    let measurementFilePath = FileManager.default.currentDirectoryPath + "/measurements.txt"
-    let outputFilePath = FileManager.default.currentDirectoryPath + "/output.txt"
+    let measurementFilePath = "./measurements.txt"
+    let outputFilePath = "./brc-output.txt"
 
     actor Tally {
         var min: Double
@@ -18,18 +18,15 @@ class Processor {
         }
 
         func add(temperature: Double) {
-            if temperature < min {
-                min = temperature
-            } else if temperature > max {
-                max = temperature
-            }
+            min = Swift.min(min, temperature)
+            max = Swift.max(max, temperature)
             total += temperature
             count += 1
         }
 
-        func output(id: String) -> String {
+        func output(city: String) -> String {
             let mean = (total / Double(count) * 10).rounded() / 10
-            return "\(id),\(min),\(mean),\(max)\n"
+            return "\(city),\(min),\(mean),\(max)\n"
         }
     }
 
@@ -112,9 +109,9 @@ class Processor {
                 fileHandle.closeFile()
             }
 
-            for id in tallies.keys.sorted() {
-                if let tally = tallies[id] {
-                    let output = await tally.output(id: id)
+            for city in tallies.keys.sorted() {
+                if let tally = tallies[city] {
+                    let output = await tally.output(city: city)
                     if let data = output.data(using: .utf8) {
                         fileHandle.write(data)
                     }

@@ -7,6 +7,8 @@
 
 import Foundation
 
+let concurrentEnabled = true
+
 final class MemoryMappedFile {
     private let fileDescriptor: Int32
     private let fileSize: Int
@@ -28,21 +30,34 @@ final class MemoryMappedFile {
         munmap(dataPointer, fileSize)
     }
 
+    private func stringValue(prefix: String, from start: UnsafePointer<CChar>, to end: UnsafePointer<CChar>) -> String {
+        let length = start.distance(to: end)
+        let cString = String(cString: start, length: length) ?? "-"
+        let formatted = (cString.prefix(20) + " ... " + cString.suffix(20)).replacingOccurrences(of: "\n", with: "\\n")
+        return "\(prefix) \(formatted)"
+    }
+
     func lines(forSegment index: Int) -> LineSequence {
         let startOffset = index * segmentSize
         let endOffset = (index == (fileSize / segmentSize) - 1) ? fileSize : startOffset + segmentSize
         let startPointer = dataPointer.advanced(by: startOffset)
         let endPointer = dataPointer.advanced(by: endOffset)
+        let maxPointer = dataPointer.advanced(by: fileSize)
+        let lastSegmentIndex = (fileSize / segmentSize) - 1
 
         let adjustedStart: UnsafePointer<CChar> = (index == 0) ? UnsafePointer(startPointer) : findNextNewline(from: UnsafePointer(startPointer), until: UnsafePointer(endPointer)).advanced(by: 1)
-        let adjustedEnd: UnsafePointer<CChar> = (index == (fileSize / segmentSize) - 1) ? UnsafePointer(endPointer) : findNextNewline(from: adjustedStart.advanced(by: segmentSize), until: UnsafePointer(endPointer))
+
+        let adjustedEnd: UnsafePointer<CChar> = (index == lastSegmentIndex) ? UnsafePointer(maxPointer) : findNextNewline(from: endPointer, until: UnsafePointer(maxPointer))
 
         return LineSequence(start: adjustedStart, end: adjustedEnd)
     }
 
-    private func findNextNewline(from pointer: UnsafePointer<CChar>, until end: UnsafePointer<CChar>) -> UnsafePointer<CChar> {
-        var current = pointer
-        while current < end && current.pointee != 10 { // 10 is the ASCII code for newline
+    // 10 is the ASCII code for newline
+    private let newline = 10
+
+    private func findNextNewline(from start: UnsafePointer<CChar>, until end: UnsafePointer<CChar>) -> UnsafePointer<CChar> {
+        var current = start
+        while current < end && current.pointee != newline {
             current = current.advanced(by: 1)
         }
         return current
@@ -96,12 +111,12 @@ extension String {
 
 // Result struct to store the statistics for each city
 struct Result {
-    var min: Int
-    var max: Int
-    var sum: Int
+    var min: Double
+    var max: Double
+    var sum: Double
     var count: Int
 
-    mutating func update(with temperature: Int) {
+    mutating func update(with temperature: Double) {
         min = Swift.min(min, temperature)
         max = Swift.max(max, temperature)
         sum += temperature
@@ -111,13 +126,18 @@ struct Result {
     var mean: Double {
         return Double(sum) / Double(count)
     }
+
+    func output(city: String) -> String {
+        let mean = (sum / Double(count) * 10).rounded() / 10
+        return "\(city),\(min),\(mean),\(max)\n"
+    }
 }
 
 // Actor to handle concurrent updates to results
 actor Results {
     private var results: [String: Result] = [:]
 
-    func update(city: String, temperature: Int) {
+    func update(city: String, temperature: Double) {
         if var stats = results[city] {
             stats.update(with: temperature)
             results[city] = stats
@@ -137,43 +157,79 @@ func processSegment(index: Int, file: MemoryMappedFile, results: Results) async 
 
     for await line in lines {
         let components = line.split(separator: ";")
-        guard components.count == 2, let temperature = Int(components[1]) else {
+        guard components.count == 2, let temperature = Double(components[1]) else {
             continue
         }
         let city = String(components[0])
 
-        // Update results
         await results.update(city: city, temperature: temperature)
     }
 }
 
-// Main function
+func write(results: Results, to filePath: String) async -> Int {
+    FileManager.default.createFile(atPath: filePath, contents: nil, attributes: nil)
+
+    if let fileHandle = FileHandle(forWritingAtPath: filePath) {
+        defer {
+            fileHandle.closeFile()
+        }
+
+        var count = 0
+        let sortedResults = await results.getResults().sorted { $0.key < $1.key }
+        for (city, result) in sortedResults {
+            if let data = result.output(city: city).data(using: .utf8) {
+                fileHandle.write(data)
+            }
+            count += 1
+        }
+
+        print("Output:", filePath)
+
+        return count
+    }
+
+    return 0
+}
+
 func main() async {
-    let filePath = "./measurements.txt"
-    guard let file = MemoryMappedFile(path: filePath, numberOfSegments: ProcessInfo.processInfo.processorCount) else {
+    let start = Date()
+
+    let measurementFilePath = "./measurements.txt"
+    let outputFilePath = "./chatgpt-output.txt"
+
+    guard let file = MemoryMappedFile(path: measurementFilePath, numberOfSegments: ProcessInfo.processInfo.processorCount) else {
         print("Failed to map file")
-        return
+        exit(EXIT_SUCCESS)
     }
 
     let results = Results()
     let numberOfSegments = ProcessInfo.processInfo.processorCount
 
-    await withTaskGroup(of: Void.self) { taskGroup in
-        for i in 0..<numberOfSegments {
-            taskGroup.addTask {
-                await processSegment(index: i, file: file, results: results)
+    if concurrentEnabled {
+        await withTaskGroup(of: Void.self) { taskGroup in
+            for i in 0..<numberOfSegments {
+                taskGroup.addTask {
+                    await processSegment(index: i, file: file, results: results)
+                }
             }
+        }
+    } else {
+        for i in 0..<numberOfSegments {
+            await processSegment(index: i, file: file, results: results)
         }
     }
 
-    // Print the final results
-    let sortedResults = await results.getResults().sorted { $0.key < $1.key }
-    for (city, stats) in sortedResults {
-        print("\(city): min = \(stats.min), mean = \(stats.mean), max = \(stats.max)")
-    }
+    let count = await write(results: results, to: outputFilePath)
+
+    let totalElapsed = -start.timeIntervalSinceNow
+    print("Processed with \(count) results in \(totalElapsed * 1000) ms")
+
+    exit(EXIT_SUCCESS)
 }
 
 // Run the main function
 Task {
     await main()
 }
+
+dispatchMain()

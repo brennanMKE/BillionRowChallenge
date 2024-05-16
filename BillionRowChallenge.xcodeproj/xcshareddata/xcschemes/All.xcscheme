@@ -29,6 +29,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "26E4F8352BF3BEB70021093F"
+               BuildableName = "ChatGPT"
+               BlueprintName = "ChatGPT"
+               ReferencedContainer = "container:BillionRowChallenge.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "2660279F2BF1D248008698A3"
                BuildableName = "CreateMeasurements"
                BlueprintName = "CreateMeasurements"
