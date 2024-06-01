@@ -25,22 +25,38 @@ final class PerformanceTests: XCTestCase {
     func testOneHundredThousandLines() async throws {
         let segmentCount = 4
         let fileURL = try oneHundredThousandLineFileURL
-        let start = Date()
-        let mappedLines = try await Reader.readMappedFile(fileURL: fileURL, segmentCount: segmentCount)
-        XCTAssertEqual(100_000, mappedLines.count)
-        let totalElapsed = -start.timeIntervalSinceNow
-        print("Read in \(mappedLines.count) in \(totalElapsed * 1000) ms")
+        try await asyncMeasure(iterations: 5) {
+            let mappedLines = try await Reader.readMappedFile(fileURL: fileURL, segmentCount: segmentCount)
+            XCTAssertEqual(100_000, mappedLines.count)
+        }
     }
 
     func testTenMillionLines() async throws {
         let segmentCount = 4
         let fileURL = try tenMillionLineFileURL
 
-        let start = Date()
-        let mappedLines = try await Reader.readMappedFile(fileURL: fileURL, segmentCount: segmentCount)
-        XCTAssertEqual(10_000_000, mappedLines.count)
-        let totalElapsed = -start.timeIntervalSinceNow
-        print("Read in \(mappedLines.count) in \(totalElapsed * 1000) ms")
+        try await asyncMeasure(iterations: 5) {
+            let mappedLines = try await Reader.readMappedFile(fileURL: fileURL, segmentCount: segmentCount)
+            XCTAssertEqual(10_000_000, mappedLines.count)
+        }
+    }
+
+    func asyncMeasure(iterations: Int, operation: () async throws -> Void) async throws {
+        guard iterations > 0 else {
+            XCTFail()
+            return
+        }
+
+        var totalTimeElapsed: TimeInterval = 0.0
+        for iteration in 0..<iterations {
+            let start = Date()
+            try await operation()
+            let timeElapsed = -start.timeIntervalSinceNow
+            totalTimeElapsed += timeElapsed
+            print("Iteration \(iteration + 1): \(timeElapsed * 1000) ms")
+        }
+        let averageTimeElapsed = totalTimeElapsed / Double(iterations)
+        print("Averaged \(averageTimeElapsed * 1000) ms")
     }
 
 }
