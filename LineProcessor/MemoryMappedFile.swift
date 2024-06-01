@@ -1,7 +1,9 @@
 import Foundation
 
-// 10 is the ASCII code for newline
-private let newline = 10
+struct ASCII {
+    static let newline = 10
+    static let semicolon = 59
+}
 
 /**
   Memory Mapped File which makes it possible to read the text file as memory.
@@ -47,7 +49,7 @@ final class MemoryMappedFile {
 
     func findNextNewline(from start: UnsafePointer<CChar>, until end: UnsafePointer<CChar>) -> UnsafePointer<CChar> {
         var current = start
-        while current < end && current.pointee != newline {
+        while current < end && current.pointee != ASCII.newline {
             current = current.advanced(by: 1)
         }
         return current
@@ -88,7 +90,7 @@ final class MemoryMappedFile {
 
             private func findNextNewline(from pointer: UnsafePointer<CChar>) -> UnsafePointer<CChar> {
                 var current = pointer
-                while current < end && current.pointee != newline {
+                while current < end && current.pointee != ASCII.newline {
                     current = current.advanced(by: 1)
                 }
                 return current
