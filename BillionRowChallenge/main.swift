@@ -1,7 +1,7 @@
 import Foundation
 
 class Processor {
-    let measurementFilePath = "./measurements.txt"
+    let measurementFilePath = "./10_000_000.txt"
     let outputFilePath = "./brc-output.txt"
 
     actor Tally {

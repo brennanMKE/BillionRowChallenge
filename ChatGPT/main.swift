@@ -147,7 +147,7 @@ actor Results {
     }
 
     func getResults() -> [String: Result] {
-        return results
+        results
     }
 }
 
@@ -194,7 +194,7 @@ func write(results: Results, to filePath: String) async -> Int {
 func main() async {
     let start = Date()
 
-    let measurementFilePath = "./measurements.txt"
+    let measurementFilePath = "./10_000_000.txt"
     let outputFilePath = "./chatgpt-output.txt"
 
     guard let file = MemoryMappedFile(path: measurementFilePath, numberOfSegments: ProcessInfo.processInfo.processorCount) else {
