@@ -27,13 +27,6 @@ final class MemoryMappedFile {
         munmap(dataPointer, fileSize)
     }
 
-    private func stringValue(prefix: String, from start: UnsafePointer<CChar>, to end: UnsafePointer<CChar>) -> String {
-        let length = start.distance(to: end)
-        let cString = String(cString: start, length: length) ?? "-"
-        let formatted = (cString.prefix(20) + " ... " + cString.suffix(20)).replacingOccurrences(of: "\n", with: "\\n")
-        return "\(prefix) \(formatted)"
-    }
-
     /// Lines provides a sequence which can be iterated over asynchronously.
     /// - Parameter index: section index
     /// - Returns: async sequence to access each line
@@ -48,8 +41,6 @@ final class MemoryMappedFile {
         let adjustedStart: UnsafePointer<CChar> = (index == 0) ? UnsafePointer(startPointer) : findNextNewline(from: UnsafePointer(startPointer), until: UnsafePointer(endPointer)).advanced(by: 1)
 
         let adjustedEnd: UnsafePointer<CChar> = (index == lastSegmentIndex) ? UnsafePointer(endPointer) : findNextNewline(from: endPointer, until: UnsafePointer(maxPointer))
-
-        let string = stringValue(prefix: "===", from: adjustedStart, to: adjustedEnd)
 
         return LineSequence(start: adjustedStart, end: adjustedEnd)
     }
